@@ -70,6 +70,45 @@ def emu_kill(serial: str) -> ToolResult:
     return run(_adb_path(), ["-s", serial, "emu", "kill"])
 
 
+def emu_avd_name(serial: str) -> str:
+    """Return the AVD name reported by a running emulator at the given serial.
+
+    `adb -s <serial> emu avd name` prints two lines: the AVD name, then "OK".
+    """
+    result = run(_adb_path(), ["-s", serial, "emu", "avd", "name"])
+    if not result.ok:
+        return ""
+    first = result.stdout.splitlines()[0] if result.stdout else ""
+    return first.strip()
+
+
+def list_emulator_serials() -> list[str]:
+    """Return serials of currently attached emulators (e.g. emulator-5554)."""
+    result = devices()
+    serials: list[str] = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith("List of devices"):
+            continue
+        parts = line.split()
+        if parts and parts[0].startswith("emulator-"):
+            serials.append(parts[0])
+    return serials
+
+
+def find_emulator_serial_by_avd(avd_name: str) -> str | None:
+    """Return the running emulator's serial whose AVD name matches, else None."""
+    for serial in list_emulator_serials():
+        if emu_avd_name(serial) == avd_name:
+            return serial
+    return None
+
+
 def uiautomator_dump(*, serial: str | None = None) -> ToolResult:
     """Dump UI hierarchy to /sdcard/window_dump.xml on device."""
     return shell("uiautomator dump /sdcard/window_dump.xml", serial=serial)
+
+
+def pull(remote: str, local: str | Path, *, serial: str | None = None) -> ToolResult:
+    args = _device_args(serial) + ["pull", remote, str(local)]
+    return run(_adb_path(), args)

@@ -1,7 +1,7 @@
 import typer
 
 from . import DISCLAIMER, __version__
-from .commands import emulator, info, run, screen, sdk
+from .commands import describe, emulator, info, init, layout, run, screen, sdk
 
 app = typer.Typer(
     name="android-cli-mac-x86-community",
@@ -14,7 +14,10 @@ app.add_typer(sdk.app, name="sdk", help="Download and list SDK packages")
 app.add_typer(emulator.app, name="emulator", help="Emulator commands")
 app.add_typer(screen.app, name="screen", help="Commands to view the device")
 app.command(name="info", help="Print environment information")(info.info_cmd)
+app.command(name="init", help="Initialize the user-level config directory")(init.init_cmd)
 app.command(name="run", help="Deploy an Android application")(run.run_cmd)
+app.command(name="describe", help="Analyze an Android project")(describe.describe_cmd)
+app.command(name="layout", help="Return the layout tree of an application")(layout.layout_cmd)
 
 
 def _version_callback(value: bool) -> None:

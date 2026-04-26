@@ -31,3 +31,29 @@ def install_cmd(
         typer.echo(result.stderr, err=True, nl=False)
     if not result.ok:
         raise typer.Exit(result.returncode)
+
+
+@app.command("update")
+def update_cmd() -> None:
+    """Update all installed SDK packages."""
+    result = sdkmanager.update_all()
+    if result.stdout:
+        typer.echo(result.stdout, nl=False)
+    if result.stderr:
+        typer.echo(result.stderr, err=True, nl=False)
+    if not result.ok:
+        raise typer.Exit(result.returncode)
+
+
+@app.command("remove")
+def remove_cmd(
+    packages: list[str] = typer.Argument(..., help="One or more package names"),
+) -> None:
+    """Remove one or more SDK packages."""
+    result = sdkmanager.remove(packages)
+    if result.stdout:
+        typer.echo(result.stdout, nl=False)
+    if result.stderr:
+        typer.echo(result.stderr, err=True, nl=False)
+    if not result.ok:
+        raise typer.Exit(result.returncode)
