@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "android-cli-mac-x86-community"
+version = "0.1.0.dev0"
+description = "Unofficial community port of Android CLI for Intel macOS (x86_64). Wraps adb / sdkmanager / avdmanager / emulator. Not affiliated with Google LLC."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "AndyAWD" }]
+keywords = ["android", "cli", "macos", "intel", "x86_64", "community"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "typer>=0.12",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-mock>=3.12",
+]
+
+[project.scripts]
+android-cli-mac-x86-community = "android_cli_mac_x86_community.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/AndyAWD/android-cli-mac-x86-community"
+Issues = "https://github.com/AndyAWD/android-cli-mac-x86-community/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/android_cli_mac_x86_community"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

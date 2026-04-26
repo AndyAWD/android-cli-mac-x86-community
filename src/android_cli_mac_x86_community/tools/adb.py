@@ -1,0 +1,75 @@
+"""Thin wrapper around the platform-tools `adb` binary."""
+from __future__ import annotations
+
+from pathlib import Path
+
+from ..utils.android_home import tool_path
+from ._subprocess import ToolResult, run
+
+
+def _adb_path() -> Path:
+    return tool_path("platform-tools/adb")
+
+
+def _device_args(serial: str | None) -> list[str]:
+    return ["-s", serial] if serial else []
+
+
+def version() -> ToolResult:
+    return run(_adb_path(), ["version"])
+
+
+def devices() -> ToolResult:
+    return run(_adb_path(), ["devices", "-l"])
+
+
+def install(apks: list[str | Path], *, serial: str | None = None,
+            replace: bool = True) -> ToolResult:
+    args = _device_args(serial)
+    apk_paths = [str(a) for a in apks]
+    if len(apk_paths) > 1:
+        args.append("install-multiple")
+    else:
+        args.append("install")
+    if replace:
+        args.append("-r")
+    args.extend(apk_paths)
+    return run(_adb_path(), args)
+
+
+def shell(command: str, *, serial: str | None = None) -> ToolResult:
+    args = _device_args(serial) + ["shell", command]
+    return run(_adb_path(), args)
+
+
+def start_activity(component: str, *, serial: str | None = None,
+                   debug: bool = False) -> ToolResult:
+    cmd = "am start"
+    if debug:
+        cmd += " -D"
+    cmd += f" -n {component}"
+    return shell(cmd, serial=serial)
+
+
+def screencap_png(serial: str | None = None) -> bytes:
+    """Return raw PNG bytes from `adb exec-out screencap -p`."""
+    import subprocess
+
+    exe = str(_adb_path())
+    args = [exe, *_device_args(serial), "exec-out", "screencap", "-p"]
+    proc = subprocess.run(args, capture_output=True)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"adb screencap failed (exit {proc.returncode}): "
+            f"{proc.stderr.decode(errors='replace').strip()}"
+        )
+    return proc.stdout
+
+
+def emu_kill(serial: str) -> ToolResult:
+    return run(_adb_path(), ["-s", serial, "emu", "kill"])
+
+
+def uiautomator_dump(*, serial: str | None = None) -> ToolResult:
+    """Dump UI hierarchy to /sdcard/window_dump.xml on device."""
+    return shell("uiautomator dump /sdcard/window_dump.xml", serial=serial)
