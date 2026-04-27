@@ -3,7 +3,7 @@ import typer
 from . import DISCLAIMER, __version__
 from .commands import (
     create, describe, docs, emulator, info, init, layout, run, screen, sdk,
-    skills,
+    skills, update,
 )
 
 app = typer.Typer(
@@ -24,6 +24,7 @@ app.command(name="run", help="Deploy an Android application")(run.run_cmd)
 app.command(name="describe", help="Analyze an Android project")(describe.describe_cmd)
 app.command(name="layout", help="Return the layout tree of an application")(layout.layout_cmd)
 app.command(name="create", help="Scaffold a new Android project")(create.create_cmd)
+app.command(name="update", help="Self-update the CLI from GitHub")(update.update_cmd)
 
 
 def _version_callback(value: bool) -> None:

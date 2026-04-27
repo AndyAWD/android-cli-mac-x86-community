@@ -106,3 +106,73 @@ def test_create_unknown_template_lists_available(
     assert result.exit_code == 2
     out = result.output + (result.stderr or "")
     assert "empty_compose" in out
+
+
+def test_create_list_templates(runner: CliRunner):
+    result = runner.invoke(app, ["create", "--list-templates"])
+    assert result.exit_code == 0, result.output
+    names = result.output.split()
+    assert "empty_compose" in names
+    assert "empty_views" in names
+    assert "compose_navigation" in names
+
+
+def test_create_empty_views_scaffolds(runner: CliRunner, tmp_path: Path):
+    target = tmp_path / "ViewsApp"
+    result = runner.invoke(
+        app,
+        [
+            "create", str(target),
+            "--name", "ViewsApp",
+            "--package", "com.example.viewsapp",
+            "--template", "empty_views",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    main = (target / "app" / "src" / "main" / "java"
+            / "com" / "example" / "viewsapp" / "MainActivity.kt")
+    assert main.exists()
+    text = main.read_text(encoding="utf-8")
+    assert "AppCompatActivity" in text
+    assert "package com.example.viewsapp" in text
+    layout = (target / "app" / "src" / "main" / "res" / "layout"
+              / "activity_main.xml")
+    assert layout.exists()
+    # No Compose plugin in the views template's app build script.
+    app_gradle = (target / "app" / "build.gradle.kts").read_text(encoding="utf-8")
+    assert "kotlin.plugin.compose" not in app_gradle
+    assert "viewBinding = true" in app_gradle
+
+
+def test_create_compose_navigation_scaffolds(
+    runner: CliRunner, tmp_path: Path
+):
+    target = tmp_path / "NavApp"
+    result = runner.invoke(
+        app,
+        [
+            "create", str(target),
+            "--name", "NavApp",
+            "--package", "com.example.navapp",
+            "--template", "compose_navigation",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    main = (target / "app" / "src" / "main" / "java"
+            / "com" / "example" / "navapp" / "MainActivity.kt")
+    assert main.exists()
+    text = main.read_text(encoding="utf-8")
+    assert "NavHost" in text
+    assert 'startDestination = "home"' in text
+    assert 'detail/{itemId}' in text
+    app_gradle = (target / "app" / "build.gradle.kts").read_text(encoding="utf-8")
+    assert "navigation-compose" in app_gradle
+
+
+def test_create_requires_args_without_list_templates(
+    runner: CliRunner, tmp_path: Path
+):
+    result = runner.invoke(app, ["create"])
+    assert result.exit_code == 2
+    out = result.output + (result.stderr or "")
+    assert "required" in out.lower()

@@ -41,24 +41,44 @@ def _run_gradle_wrapper(target: Path) -> None:
         raise typer.Exit(result.returncode)
 
 
+def _available_templates() -> list[str]:
+    return sorted(p.name for p in _TEMPLATES_DIR.iterdir() if p.is_dir())
+
+
 def create_cmd(
-    path: Path = typer.Argument(..., help="Directory to scaffold the project into"),
-    name: str = typer.Option(..., "--name", help="App display name, e.g. 'My App'"),
-    package: str = typer.Option(..., "--package",
+    path: Optional[Path] = typer.Argument(None,
+        help="Directory to scaffold the project into"),
+    name: Optional[str] = typer.Option(None, "--name",
+        help="App display name, e.g. 'My App'"),
+    package: Optional[str] = typer.Option(None, "--package",
         help="Android package, e.g. com.example.myapp"),
     template: str = typer.Option("empty_compose", "--template",
         help="Template to use"),
+    list_templates: bool = typer.Option(False, "--list-templates",
+        help="List available templates and exit"),
     no_wrapper: bool = typer.Option(False, "--no-wrapper",
         help="Skip running `gradle wrapper` after scaffolding"),
 ) -> None:
     """Scaffold a new Android project."""
+    if list_templates:
+        for t in _available_templates():
+            typer.echo(t)
+        return
+
+    if path is None or name is None or package is None:
+        typer.echo(
+            "error: PATH, --name, and --package are required (or pass --list-templates)",
+            err=True,
+        )
+        raise typer.Exit(2)
+
     _validate_package(package)
 
     template_root = _TEMPLATES_DIR / template
     if not template_root.is_dir():
-        available = sorted(p.name for p in _TEMPLATES_DIR.iterdir() if p.is_dir())
         typer.echo(
-            f"error: template '{template}' not found. available: {', '.join(available)}",
+            f"error: template '{template}' not found. available: "
+            f"{', '.join(_available_templates())}",
             err=True,
         )
         raise typer.Exit(2)
