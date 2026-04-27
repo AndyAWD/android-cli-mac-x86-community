@@ -1,4 +1,4 @@
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 DISCLAIMER = (
     "This is an unofficial community port. Not affiliated with or endorsed by\n"

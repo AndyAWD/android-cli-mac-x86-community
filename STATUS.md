@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3 與 M4 全部完成。下一階段是端到端驗證 + GitHub Releases v0.1.0。
+M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線。下一階段是端到端驗證。
 
 ## 最近動向
 
+- 2026-04-28：**v0.1.0 釋出 + GitHub Actions CI 上線** — `.github/workflows/test.yml` 對 ubuntu/macos/windows × Python 3.11/3.12/3.13 共 9 個矩陣跑 `pytest -q`，push/PR 觸發。版本由 `0.1.0.dev0` → `0.1.0`，打 annotated tag `v0.1.0` 並 `gh release create`，自此 `update` 指令真的有東西可裝。
 - 2026-04-28：**M4-(2) `update` 完成** — `utils/self_update.py` 查 GitHub Releases API（`/releases/latest`），無 release 回 None；`is_newer` 比版本（strip `v` prefix）；`pip_install_command` 用 `sys.executable -m pip` 確保跑當前環境的 pip。`commands/update.py`：預設裝最新 tag、`--check` 只檢查不裝、`--url` 安裝任意 pip target、`--repo` 改 owner/name；無 release 時 fallback 裝 default branch。新增 17 個測試（mock GitHub API + mock pip subprocess）。
 - 2026-04-28：**M4-(3) 多範本完成** — 新增 `empty_views`（AppCompat + ConstraintLayout + ViewBinding，給不想用 Compose 的使用者）與 `compose_navigation`（Compose + navigation-compose 2.7.7，含 Home → Detail 路由示範）。`create` 加 `--list-templates`；參數改成 path/name/package 都改 Optional 以便支援單跑 `--list-templates`。新增 4 個測試。Windows 真實 GitHub `update --check` 跑通（顯示 no published releases 且 exit 0）。pytest 110 passed（93 → 110，+17 update +4 templates）。
 - 2026-04-28：**M4-(1) `skills add/remove/list/find` 完成（Windows 端）** — `utils/skills_repo.py`：GitHub Contents API 列舉 `android/skills` 子目錄（5 分鐘 in-memory TTL cache）、`/repos/.../tarball` 下載 default-branch tarball 並只解壓目標 subtree（含 zip-slip 防護）、原子替換暫存 dir 避免半解壓。`commands/skills.py`：4 個子指令、`--json` / `--upstream` / `--no-cache` 選項、`add/remove` 對 `~/.android-cli-mac-x86-community/skills/<name>/` 操作、`upstream` 從 `config.toml [skills]` 讀（fallback `android/skills`）。新增 18 個測試（list/find/cache/error path、tarball 解壓只取 subtree、replace existing、未知 skill、path traversal 拒絕、CLI 全路徑）。pytest 89 passed（+18）。Windows 真實 GitHub 端到端通過：list 7 個 skill、`add navigation`（24 檔）、`remove` 乾淨。
@@ -38,6 +39,8 @@ M3 與 M4 全部完成。下一階段是端到端驗證 + GitHub Releases v0.1.0
 - [x] M4-(3) 多範本（templates/empty_views + templates/compose_navigation；`create --list-templates`）
 - [x] M4-(2) `update`（utils/self_update + commands/update，GitHub Releases API + `sys.executable -m pip`，含 --check / --url / --repo）
 - [x] 110 個單元 + CLI 測試通過
+- [x] v0.1.0 GitHub Release（tag `v0.1.0`）
+- [x] GitHub Actions CI（ubuntu/macos/windows × Python 3.11/3.12/3.13）
 
 ## 進行中
 
@@ -48,8 +51,6 @@ M3 與 M4 全部完成。下一階段是端到端驗證 + GitHub Releases v0.1.0
 - [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
 - [ ] 端到端：用 `create` 真產一個專案、`gradle wrapper` 後跑 `./gradlew assembleDebug` 驗 build 能過（環境裝的 Gradle 9.3.1 vs 範本 AGP 8.5 相容性待測）
 - [ ] M3-② 端到端再驗證：在 macOS 端拉下來跑 `docs search` / `docs fetch`，確認跨平台路徑（`Path.home()`）與 httpx 行為一致
-- [ ] 打 v0.1.0 GitHub Release（CHANGELOG + tag）→ 才能讓 `update` 真的有東西可裝
-- [ ] CI（GitHub Actions 跑 pytest）
 
 ## 卡點
 

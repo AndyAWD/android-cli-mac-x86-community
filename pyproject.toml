@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "android-cli-mac-x86-community"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Unofficial community port of Android CLI for Intel macOS (x86_64). Wraps adb / sdkmanager / avdmanager / emulator. Not affiliated with Google LLC."
 readme = "README.md"
 requires-python = ">=3.11"
