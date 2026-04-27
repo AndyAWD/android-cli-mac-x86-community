@@ -3,28 +3,14 @@ from __future__ import annotations
 
 import json
 import sys
-import tempfile
 from pathlib import Path
 from typing import Optional
 
 import typer
 
-from ..tools import adb
 from ..utils.config import config_root, layout_snapshot_path
 from ..utils.layout_xml import diff_trees, xml_to_tree
-
-
-def _capture_xml(serial: str | None) -> str:
-    dump = adb.uiautomator_dump(serial=serial)
-    if not dump.ok:
-        raise typer.Exit(dump.returncode or 1)
-    with tempfile.TemporaryDirectory() as tmp:
-        local = Path(tmp) / "window_dump.xml"
-        pull = adb.pull("/sdcard/window_dump.xml", local, serial=serial)
-        if not pull.ok:
-            typer.echo(pull.stderr, err=True, nl=False)
-            raise typer.Exit(pull.returncode or 1)
-        return local.read_text(encoding="utf-8")
+from ..utils.uiautomator import capture_layout_xml
 
 
 def layout_cmd(
@@ -38,7 +24,7 @@ def layout_cmd(
         help="Pretty-print the JSON"),
 ) -> None:
     """Return the layout tree of the foreground application."""
-    xml_text = _capture_xml(device)
+    xml_text = capture_layout_xml(device)
     indent = 2 if pretty else None
 
     if diff:
