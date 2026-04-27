@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-開發機切到 Intel MBP，環境就緒。準備進 M3。
+M3-① `screen resolve` 完成。下一步進 M3-② docs search/fetch。
 
 ## 最近動向
 
+- 2026-04-27：M3-① `screen resolve` 完成 — 結構式 selector（--text/--id/--desc/--class），bounds 解析含中心點。重構：抽 `_capture_xml` → `utils/uiautomator.capture_layout_xml`。pytest 45 passed（+10 unit、+4 CLI）。
 - 2026-04-27：Intel MBP 接手 — sdkmanager / avdmanager 透過 `brew install --cask android-commandlinetools` 取得，並 symlink 至 `~/Library/Android/sdk/cmdline-tools/latest/`（cli.py 硬編碼此路徑）。editable install + pytest 31 passed，三個煙霧指令（--version / info / emulator list）通過。端到端（emulator start / run apk）尚未實跑。
 - 2026-04-27：M2 完成（emulator stop/remove、sdk update/remove、init、describe、layout）+ 14 個新單元測試，pytest 31 passed
 - 2026-04-27：遠端 repo 已建立並 push 初始 commit：<https://github.com/AndyAWD/android-cli-mac-x86-community>
@@ -23,7 +24,8 @@
 - [x] `utils/config.py`（~/.android-cli-mac-x86-community/ 路徑與 ensure_layout）
 - [x] `utils/layout_xml.py`（uiautomator dump XML → JSON tree、diff 演算法）
 - [x] `cli.py` 串起所有 8 個頂層子指令
-- [x] 31 個單元測試通過
+- [x] M3-① `screen resolve`（find_nodes / parse_bounds、capture_layout_xml 抽出共用）
+- [x] 45 個單元 + CLI 測試通過
 
 ## 進行中
 
@@ -31,8 +33,9 @@
 
 ## 下一步
 
-- [ ] 端到端整合測試：emulator start → run --apks → screen capture（已有 AVD `Medium_Phone_API_36.1`）
-- [ ] 進入 M3：docs search/fetch、create（先支援 1 個範本）、screen resolve
+- [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
+- [ ] M3-② docs search/fetch（待選 A/B/C 策略）
+- [ ] M3-③ create（先支援 1 個範本，wrapper 處理待選 A/B）
 
 ## 卡點
 
