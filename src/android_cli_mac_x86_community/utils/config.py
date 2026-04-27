@@ -18,6 +18,22 @@ def layout_snapshot_path() -> Path:
     return config_root() / "last_layout.xml"
 
 
+def docs_dir() -> Path:
+    return config_root() / "docs"
+
+
+def docs_kb_zip_path() -> Path:
+    return docs_dir() / "dac_kb.zip"
+
+
+def docs_kb_etag_path() -> Path:
+    return docs_dir() / "dac_kb.etag"
+
+
+def docs_index_db_path() -> Path:
+    return docs_dir() / "index.sqlite3"
+
+
 def config_file() -> Path:
     return config_root() / "config.toml"
 

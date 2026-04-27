@@ -2,9 +2,13 @@
 
 ## TL;DR
 
-**問題已解決，方向徹底翻轉。** 不需要去查 `developer.android.com` 的搜尋後端，因為**上游 `android docs` 根本不搜那個網站**。它下載一份預打包的 Knowledge Base zip 到本地，用 Apache Lucene 建索引離線搜尋。
+**已完成。** 方向是 mirror 上游 `android docs`：下載 `https://dl.google.com/dac/dac_kb.zip`（公開 CDN、無 API key、ETag 快取）→ 用 Python 標準庫 SQLite FTS5 建索引 → `kb://` URL 直接從 zip 讀 `.md.txt`。零 scrape、零外部 service、跨平台無原生編譯。
 
-community fork 直接 mirror 同一機制即可：下載同一份公開 zip，用 Python FTS 引擎建本地索引。零 API key、零 scrape、零外部依賴。
+實作位置：
+- `src/android_cli_mac_x86_community/utils/docs_kb.py`（下載 + ETag）
+- `src/android_cli_mac_x86_community/utils/docs_index.py`（FTS5 + fetch）
+- `src/android_cli_mac_x86_community/commands/docs.py`（typer subapp）
+- `tests/test_docs.py`（16 個測試）
 
 ## 進度時間軸
 
