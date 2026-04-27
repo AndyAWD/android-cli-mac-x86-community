@@ -2,112 +2,169 @@
 
 ## TL;DR
 
-擱置中。原訂策略「用 Algolia DocSearch」假設錯誤（developer.android.com 不是用 Algolia）。
-要請 Windows 端用 Chrome DevTools 真實操作搜尋一次，把實際 search endpoint 的 host / 請求 / 回應結構記錄下來，再回到 macOS 端據此決定方案並實作。
+**問題已解決，方向徹底翻轉。** 不需要去查 `developer.android.com` 的搜尋後端，因為**上游 `android docs` 根本不搜那個網站**。它下載一份預打包的 Knowledge Base zip 到本地，用 Apache Lucene 建索引離線搜尋。
+
+community fork 直接 mirror 同一機制即可：下載同一份公開 zip，用 Python FTS 引擎建本地索引。零 API key、零 scrape、零外部依賴。
 
 ## 進度時間軸
 
 - 2026-04-27 macOS 端：M3-① `screen resolve` 完成、M3-③ `create` 完成。
 - 2026-04-27 macOS 端：嘗試實作 M3-② 策略 A（Algolia DocSearch），WebFetch 兩次驗證假設 → 不成立 → 擱置。
-- **下一步：Windows 端驗證 search endpoint。**
+- 2026-04-27 Windows 端：直接執行已安裝的上游 `android docs search` 並逆向 `main.jar`，**找到完整實作機制**。原訂的 DevTools 驗證任務已撤銷（前提錯誤）。
 
-## 已驗證為錯的假設
+## 已驗證為錯的假設（保留作為紀錄）
 
 | 假設 | 驗證方式 | 結果 |
 |---|---|---|
-| developer.android.com 用 Algolia DocSearch（有公開 application_id / search-only api_key / index name） | WebFetch `https://developer.android.com/docs` | HTML 內找不到 `algolia` / `algolianet` 字樣，沒有 application_id / api_key |
-| 搜尋結果頁 `/s/results?q=...` 是靜態 HTML，可以 scrape | WebFetch `https://developer.android.com/s/results?q=Activity` | 回傳空殼頁，搜尋結果由 JS 動態載入；靜態 fetch 看不到實際 API call |
+| developer.android.com 用 Algolia DocSearch | WebFetch `https://developer.android.com/docs` | HTML 內找不到 `algolia` 字樣 |
+| 搜尋結果頁 `/s/results?q=...` 是靜態 HTML | WebFetch `https://developer.android.com/s/results?q=Activity` | 空殼頁，搜尋結果由 JS 動態載入 |
+| **上游 `android docs` 是去打 developer.android.com 的搜尋 API** | 執行 `android docs search "Activity lifecycle"`、檢查 `~/.android/cli/`、解壓 `main.jar` | **完全錯。它走本地 Lucene + 預打包 KB zip。** |
 
-**目前推測**（待 Windows 端證實或推翻）：
+## ⭐ Windows 端逆向結果（2026-04-27）
 
-- 比較可能是 **Google Custom Search Engine / Programmable Search Engine**（畢竟 Google 不會付錢給 Algolia 搜自家網站）
-- 或者是 **Google 內部搜尋**（沒對外 API，純頁面渲染）
+### 上游架構
 
-## ⭐ 給 Windows 端的驗證任務
+`android.exe`（4.5 MB Rust binary）會：
 
-### 環境
+1. 啟動內嵌 JVM（`~/.android/cli/bundles/<sha1>/jre/`）
+2. 載入 `main.jar`（40 MB Kotlin + Apache Lucene + 業務邏輯）
+3. `docs search` / `docs fetch` 由 `com/android/cli/docs/DocsCLI.class` 處理
+4. 檢索引擎：`org/apache/lucene/...`（標準 Apache Lucene）
 
-- Windows + Chrome（或 Edge）+ DevTools
-- 不需 clone repo（看完寫回 notes 即可），但建議先 `git pull origin main` 拉到 macOS 端剛 push 的 commit `b78ab2a`
-
-### 步驟
-
-1. 開 Chrome **無痕模式**（避免擴充 / cookies 干擾），按 `F12` 開 DevTools，切到 **Network** tab、勾選 **Preserve log** 與 **Disable cache**。
-2. 進 `https://developer.android.com/`。
-3. 在頁首搜尋框輸入 `Activity`，按 Enter。
-4. 觀察 Network tab：
-   - 過濾 `XHR / Fetch` 看是哪個 API call 取回搜尋結果
-   - 用 `algolia` / `cse` / `search` / `googleapis` 過濾關鍵字逐一檢查
-5. 點開最像「搜尋 API」的那筆，記錄：
-   - **Request URL**（完整含 query string）
-   - **Method**（GET / POST）
-   - **Request Headers**（特別是 `X-Algolia-API-Key`、`X-Algolia-Application-Id`、`Authorization`、`X-Goog-Api-Key`）
-   - **Request Payload**（POST body 的完整 JSON）
-   - **Response**（前 30 行 JSON 結構，特別是結果條目的欄位名稱）
-6. **Sources** tab：用 `Ctrl+Shift+F` 全域搜尋下列關鍵字，貼回找到的片段（前後各 5 行）：
-   - `algolia`
-   - `appId`
-   - `apiKey`
-   - `cx=`（Google CSE 識別碼）
-   - `googleapis.com`
-7. 試 `docs fetch` 那一面：抓任一參考頁如 `https://developer.android.com/reference/android/app/Activity`，確認：
-   - 直接 `curl -s` / `httpx.get()` 能不能拿到完整內文？
-   - 還是內文也是 JS 動態載入的（→ 靜態 fetch 拿到空殼）？
-
-### 回報格式
-
-請把結果寫進 **本檔案** 底下的 `## Windows 驗證結果（YYYY-MM-DD）` 區段，然後 commit + push（branch 用 `main` 即可，與 macOS 端不衝突）：
+啟動時 log（開 `RUST_LOG=debug` 看到）：
 
 ```
-## Windows 驗證結果（2026-04-XX）
-
-### 搜尋 API
-- host:
-- method:
-- request URL（範例）:
-- 必要 headers / API key:
-- response schema（重點欄位）:
-
-### Sources tab 找到的線索
-- ...
-
-### docs fetch 可行性
-- 對 reference 頁 curl 結果：完整 / 空殼 / 部分
-- ...
-
-### 建議方案
-- 從 B / B+ / C / D / E / C+B 混合 中挑一個，附理由。
+[INFO] Using embedded data zip
+[DEBUG] Setting DLL search path
+[DEBUG] [JVM] Adding "...\bundles\<sha1>\jre\bin" to the DLL search path
+Waiting for index to be ready...
+New version available. Downloading...
+Downloading Knowledge Base ... ...
+Knowledge Base zip updated successfully.
 ```
 
-## 候選方案（Windows 端回報後再挑）
+### Knowledge Base zip 下載
 
-| 選項 | 機制 | 優 | 缺 |
-|---|---|---|---|
-| **B** | `docs search "x"` 印出 `https://google.com/search?q=site:developer.android.com+x` 讓使用者點開 | 零依賴、零 API | 嚴格說不算搜尋 |
-| **B+** | 同 B 但抓 Google 結果頁、parse 前 N 筆 | 真有結果 | Google 可能擋，無合約 |
-| **C** | 只做 `docs fetch <url>`，不做 search | 最小但實用 | 沒搜尋能力 |
-| **D** | 接 Google Programmable Search Engine API（環境變數帶 `GOOGLE_API_KEY` + CSE id） | 正規有合約 | 初始體驗差，使用者要去 Google Cloud 開 key |
-| **E** | scrape `developer.android.com/s/results` HTML | 不需 API key | 動態 render，靜態 fetch 拿不到（已驗） |
-| **C+B 混合** | `fetch` 做正事、`search` 印 Google `site:` URL 引導 | 簡單誠實 | — |
-| **若 Windows 查到實際 endpoint** | 直接接那個 endpoint | 真實做事 | 看是否有公開 API key、是否有合約 |
+從 `main.jar` 內 `com/android/cli/docs/KnowledgeBaseConstants.class` 抓到的常數：
 
-**macOS 端目前傾向**：C+B 混合（無論 Windows 端查到什麼，這方案都能落地），但若 Windows 查到公開且穩定的 endpoint，可升級成那個。
+| 項目 | 值 |
+|---|---|
+| **下載 URL** | `https://dl.google.com/dac/dac_kb.zip` |
+| **HTTP 客戶端** | `java.net.http.HttpClient`（Java 11+ 內建） |
+| **新鮮度檢查** | HTTP ETag（檔案 `dac.etag`，當前值 `"5bee57a"`） |
+| **檔案大小** | 約 19 MB |
+| **解壓大小** | 約 63 MB，9616 個檔案（4808 entry × 2 檔） |
+| **API key / 認證** | 無，完全公開 CDN |
+| **快取位置** | `~/.android/cli/docs/kbzip/dac.zip` |
+| **本地索引位置** | `~/.android/cli/docs/index/`（Lucene `_N.cfe`/`_N.cfs`/`_N.si`/`segments_1`） |
+| **索引完成標記** | `index/index_ready.json`（含 `zipHash` SHA-256） |
 
-## 實作骨架（Windows 確認方案後可參考）
+### KB zip 內容格式
 
-預期檔案：
+每筆 entry 兩個檔案：
+
+```
+android/guide/components/activities/activity-lifecycle.json
+android/guide/components/activities/activity-lifecycle.md.txt
+```
+
+`.json` 範例：
+
+```json
+{
+    "short_description": "Overview of the user experience for ...",
+    "keywords": "commissioning,UX,Fast Pair,Android,...",
+    "title": "Commissioning UX on Android",
+    "relative_url": "home/apis/android/ux/commissioning",
+    "url": "kb://home/apis/android/ux/commissioning"
+}
+```
+
+`.md.txt` 為純 Markdown 內文。
+
+### `kb://` URL schema
+
+上游搜尋結果用的不是 `https://` 而是 `kb://<relative_url>`，例如：
+
+```
+kb://android/guide/components/activities/activity-lifecycle
+```
+
+→ 對應 zip 內 `android/guide/components/activities/activity-lifecycle.md.txt`。
+
+`android docs fetch <kb-url>` 就是把 `kb://` prefix 拆掉、接上 `.md.txt`、從**本地快取 zip** 讀檔，**不發任何 network request**。
+
+### KB 涵蓋範圍
+
+不只 developer.android.com，例如也包含：
+
+- `android/...`（Android 官方文件）
+- `JetBrains/kotlin-multiplatform-dev-docs/...`
+- `JetBrains/kotlin-agent-skills/...`
+
+實際 entry 數：4808 筆（`Index created with 4808 items and committed.`）。
+
+## community fork 實作方案（方案 F：mirror 上游機制）
+
+### `docs search <query>` 流程
+
+1. 確保 `~/.android-cli-mac-x86-community/docs/dac_kb.zip` 存在且新鮮
+   - 第一次：直接下載
+   - 之後：發 `If-None-Match: <local etag>` 的 HEAD/GET，304 就跳過、200 就更新
+2. 確保本地 FTS 索引已建好（zip hash 對得上時跳過重建）
+3. 跑搜尋，輸出 top N 結果（title、kb URL、short_description）
+
+### `docs fetch <kb-url>` 流程
+
+1. 解析 `kb://<path>` → `<path>.md.txt`
+2. 從快取 zip 讀檔（`zipfile.ZipFile.read`），輸出純文字
+3. 不存在就回 error 訊息
+
+### 技術選型建議
+
+**FTS 引擎候選**：
+
+| 選項 | 優 | 缺 |
+|---|---|---|
+| **SQLite FTS5** | 標準庫、零依賴、tokenizer 夠用 | 中文分詞要自己處理（但 KB 內容大多英文，影響小） |
+| `whoosh` | 純 Python、零原生編譯 | 已長期不維護（最後 release 2022） |
+| `tantivy-py` | Rust 引擎、效能最好、最接近 Lucene 行為 | 多一個原生依賴 |
+
+**首選 SQLite FTS5**——Python 內建、4808 筆規模綽綽有餘、跨平台無編譯。
+
+### 預期檔案
 
 - `src/android_cli_mac_x86_community/commands/docs.py` — `docs.app` typer subapp，含 `search` / `fetch` 兩個 subcommand
-- `src/android_cli_mac_x86_community/utils/docs.py` — 純函式：`search(query, limit) → list[dict]`、`fetch(url) → str`
-- `tests/test_docs.py` — mock `httpx` 驗 URL 組裝、結果 parsing；CLI integration 測 stdout JSON
-- `cli.py` 註冊 `app.add_typer(docs.app, name="docs", help="...")`
+- `src/android_cli_mac_x86_community/utils/docs_kb.py` — KB zip 下載 + ETag 快取 + 本地路徑解析
+- `src/android_cli_mac_x86_community/utils/docs_index.py` — SQLite FTS5 建索引 + 查詢
+- `tests/test_docs.py` — mock `httpx`/`urllib` 驗 ETag 流程；用小型 fake zip 驗索引/查詢/fetch
 
-依賴：`httpx` 已在 `pyproject.toml`。HTML→text 若需要：
-- 用 stdlib `html.parser`（最少依賴，但要自己處理）
-- 加 `markdownify` 或 `html2text`（依方案而定）
+### 依賴
+
+- `httpx`（已在 `pyproject.toml`）—— 下載 zip
+- `sqlite3`（標準庫）—— FTS5 索引
+- `zipfile`（標準庫）—— 讀 KB 內容
+
+### 合法性與授權
+
+`https://dl.google.com/dac/dac_kb.zip` 是 Google 公開 CDN、無認證、無 robots 限制（Google 自家工具 `android docs` 就靠它）。下載 + 本地索引使用屬合理使用。重新發布 zip 內容要看內容本身的授權（Android docs 多為 CC BY 4.0，但本工具不重發布、只當 client，這個風險不存在）。
 
 ## 不影響的事
 
 - M3-① `screen resolve` 已完成（commit `17765c2`，pytest 45 passed）
 - M3-③ `create` 已完成（commit `b78ab2a`，pytest 55 passed）
-- 與 M3-② 互不相依，待 Windows 回報後再啟動 ②
+- 與 M3-② 互不相依
+
+## 候選方案（保留作參考）
+
+下表是 Windows 逆向**前**討論的備案，已被方案 F 取代，僅作紀錄：
+
+| 選項 | 機制 | 現況 |
+|---|---|---|
+| B | `docs search` 印 `google.com/search?q=site:...` 讓使用者點 | 棄用 |
+| B+ | scrape Google 結果頁 | 棄用 |
+| C | 只做 `docs fetch <url>` | 棄用 |
+| D | Google Programmable Search Engine API | 棄用 |
+| E | scrape `developer.android.com/s/results` | 棄用（已驗證動態 render） |
+| C+B | fetch 做正事、search 印 Google URL | 棄用 |
+| **F**（新） | **mirror 上游：下載 `dl.google.com/dac/dac_kb.zip` + 本地 FTS** | **採用** |

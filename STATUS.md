@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3-① 與 M3-③ 完成。M3-② 擱置待 Windows 端查 search endpoint。
+M3-① 與 M3-③ 完成。M3-② 方向已定（mirror 上游 `dl.google.com/dac/dac_kb.zip` + 本地 FTS），待 macOS 端實作。
 
 ## 最近動向
 
+- 2026-04-27：M3-② Windows 端逆向上游 `android docs` — 確認非 AI、是 Apache Lucene 離線搜尋。下載 URL `https://dl.google.com/dac/dac_kb.zip`（19 MB、4808 entries、ETag 快取、無 API key）。原本要去查 `developer.android.com` 搜尋後端的方向作廢，改採方案 F：mirror 上游機制 + Python SQLite FTS5。詳 `notes/m3-docs-search.md`。
 - 2026-04-27：M3-③ `create` 完成 — `empty_compose` 範本（11 檔，AGP 8.5 / Kotlin 2.0 / Compose BOM 2024.06）、scaffold 變數替換含路徑（`{{package_path}}`）、gradle wrapper 走 PATH（沒裝就 warning skip）。`utils/scaffold.py` 通用化。pytest 55 passed（+6 scaffold、+4 CLI）。
 - 2026-04-27：M3-② 擱置 — 原假設「developer.android.com 用 Algolia DocSearch」WebFetch 兩次都驗不到，需在 Windows 端 DevTools 查實際搜尋後端。研究筆記與候選方案見 `notes/m3-docs-search.md`。
 - 2026-04-27：M3-① `screen resolve` 完成 — 結構式 selector（--text/--id/--desc/--class），bounds 解析含中心點。重構：抽 `_capture_xml` → `utils/uiautomator.capture_layout_xml`。pytest 45 passed（+10 unit、+4 CLI）。
@@ -38,7 +39,7 @@ M3-① 與 M3-③ 完成。M3-② 擱置待 Windows 端查 search endpoint。
 
 - [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
 - [ ] 端到端：用 `create` 真產一個專案、`gradle wrapper` 後跑 `./gradlew assembleDebug` 驗 build 能過（環境裝的 Gradle 9.3.1 vs 範本 AGP 8.5 相容性待測）
-- [ ] M3-② docs search/fetch — 擱置，待 Windows 端 DevTools 查 developer.android.com 實際 search endpoint 後再定（候選見 `notes/m3-docs-search.md`）
+- [ ] M3-② docs search/fetch — 方向已定（方案 F：下載 `dl.google.com/dac/dac_kb.zip` + 本地 SQLite FTS5），待 macOS 端實作。實作骨架見 `notes/m3-docs-search.md`
 
 ## 卡點
 
