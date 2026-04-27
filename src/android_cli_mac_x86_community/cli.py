@@ -3,6 +3,7 @@ import typer
 from . import DISCLAIMER, __version__
 from .commands import (
     create, describe, docs, emulator, info, init, layout, run, screen, sdk,
+    skills,
 )
 
 app = typer.Typer(
@@ -16,6 +17,7 @@ app.add_typer(sdk.app, name="sdk", help="Download and list SDK packages")
 app.add_typer(emulator.app, name="emulator", help="Emulator commands")
 app.add_typer(screen.app, name="screen", help="Commands to view the device")
 app.add_typer(docs.app, name="docs", help="Search and fetch Android documentation")
+app.add_typer(skills.app, name="skills", help="Manage agent skill packs")
 app.command(name="info", help="Print environment information")(info.info_cmd)
 app.command(name="init", help="Initialize the user-level config directory")(init.init_cmd)
 app.command(name="run", help="Deploy an Android application")(run.run_cmd)

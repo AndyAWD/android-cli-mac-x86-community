@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3 全部完成（①②③）。
+M3 全部完成（①②③）。M4-(1) `skills` 完成。剩 M4-(2) `update` 與 M4-(3) 多範本。
 
 ## 最近動向
 
+- 2026-04-28：**M4-(1) `skills add/remove/list/find` 完成（Windows 端）** — `utils/skills_repo.py`：GitHub Contents API 列舉 `android/skills` 子目錄（5 分鐘 in-memory TTL cache）、`/repos/.../tarball` 下載 default-branch tarball 並只解壓目標 subtree（含 zip-slip 防護）、原子替換暫存 dir 避免半解壓。`commands/skills.py`：4 個子指令、`--json` / `--upstream` / `--no-cache` 選項、`add/remove` 對 `~/.android-cli-mac-x86-community/skills/<name>/` 操作、`upstream` 從 `config.toml [skills]` 讀（fallback `android/skills`）。新增 18 個測試（list/find/cache/error path、tarball 解壓只取 subtree、replace existing、未知 skill、path traversal 拒絕、CLI 全路徑）。pytest 89 passed（+18）。Windows 真實 GitHub 端到端通過：list 7 個 skill、`add navigation`（24 檔）、`remove` 乾淨。
 - 2026-04-27：**M3-② `docs search` / `docs fetch` 完成（Windows 端實作）** — 採方案 F：`utils/docs_kb.py` 走 `https://dl.google.com/dac/dac_kb.zip` + HTTP ETag 快取、`utils/docs_index.py` 用 SQLite FTS5 建索引（zip SHA-256 變才重建）、`commands/docs.py` 提供 `search`（含 `--json` / `--limit` / `--refresh`）與 `fetch <kb://...>`。新增 16 個測試（FTS5 query escape、ETag 304/200/force/error、CLI search/fetch 正反路徑）。pytest 71 passed（+16）。Windows 真實 CDN 端到端煙霧測通過。
 - 2026-04-27：M3-② Windows 端逆向上游 `android docs` — 確認非 AI、是 Apache Lucene 離線搜尋。下載 URL `https://dl.google.com/dac/dac_kb.zip`（19 MB、4808 entries、ETag 快取、無 API key）。原本要去查 `developer.android.com` 搜尋後端的方向作廢，改採方案 F：mirror 上游機制 + Python SQLite FTS5。詳 `notes/m3-docs-search.md`。
 - 2026-04-27：M3-③ `create` 完成 — `empty_compose` 範本（11 檔，AGP 8.5 / Kotlin 2.0 / Compose BOM 2024.06）、scaffold 變數替換含路徑（`{{package_path}}`）、gradle wrapper 走 PATH（沒裝就 warning skip）。`utils/scaffold.py` 通用化。pytest 55 passed（+6 scaffold、+4 CLI）。
@@ -31,7 +32,8 @@ M3 全部完成（①②③）。
 - [x] M3-① `screen resolve`（find_nodes / parse_bounds、capture_layout_xml 抽出共用）
 - [x] M3-③ `create`（utils/scaffold + empty_compose 範本 + gradle wrapper 走 PATH）
 - [x] M3-② `docs search` / `docs fetch`（utils/docs_kb ETag 快取 + utils/docs_index SQLite FTS5 + commands/docs）
-- [x] 71 個單元 + CLI 測試通過
+- [x] M4-(1) `skills add/remove/list/find`（utils/skills_repo + commands/skills，GitHub tarball + subtree 解壓 + zip-slip 防護）
+- [x] 89 個單元 + CLI 測試通過
 
 ## 進行中
 
@@ -42,6 +44,8 @@ M3 全部完成（①②③）。
 - [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
 - [ ] 端到端：用 `create` 真產一個專案、`gradle wrapper` 後跑 `./gradlew assembleDebug` 驗 build 能過（環境裝的 Gradle 9.3.1 vs 範本 AGP 8.5 相容性待測）
 - [ ] M3-② 端到端再驗證：在 macOS 端拉下來跑 `docs search` / `docs fetch`，確認跨平台路徑（`Path.home()`）與 httpx 行為一致
+- [ ] M4-(2) `update`（自我更新指令）— 從 release 端點下載新版替換自己
+- [ ] M4-(3) 多範本支援（目前 `create` 只有 `empty_compose`）
 
 ## 卡點
 
