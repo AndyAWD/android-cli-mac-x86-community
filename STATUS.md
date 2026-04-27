@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3-① `screen resolve` 完成。下一步進 M3-② docs search/fetch。
+M3-① `screen resolve` 完成。M3-② 擱置（前提錯誤，見 `notes/m3-docs-search.md`）；下一步可直接進 M3-③ `create`。
 
 ## 最近動向
 
+- 2026-04-27：M3-② 擱置 — 原假設「developer.android.com 用 Algolia DocSearch」WebFetch 兩次都驗不到，需在 Windows 端 DevTools 查實際搜尋後端。研究筆記與候選方案見 `notes/m3-docs-search.md`。
 - 2026-04-27：M3-① `screen resolve` 完成 — 結構式 selector（--text/--id/--desc/--class），bounds 解析含中心點。重構：抽 `_capture_xml` → `utils/uiautomator.capture_layout_xml`。pytest 45 passed（+10 unit、+4 CLI）。
 - 2026-04-27：Intel MBP 接手 — sdkmanager / avdmanager 透過 `brew install --cask android-commandlinetools` 取得，並 symlink 至 `~/Library/Android/sdk/cmdline-tools/latest/`（cli.py 硬編碼此路徑）。editable install + pytest 31 passed，三個煙霧指令（--version / info / emulator list）通過。端到端（emulator start / run apk）尚未實跑。
 - 2026-04-27：M2 完成（emulator stop/remove、sdk update/remove、init、describe、layout）+ 14 個新單元測試，pytest 31 passed
@@ -34,8 +35,8 @@ M3-① `screen resolve` 完成。下一步進 M3-② docs search/fetch。
 ## 下一步
 
 - [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
-- [ ] M3-② docs search/fetch（待選 A/B/C 策略）
-- [ ] M3-③ create（先支援 1 個範本，wrapper 處理待選 A/B）
+- [ ] M3-③ create（先支援 1 個範本，wrapper 策略：scaffold 後跑 `gradle wrapper`，要求 PATH 有 gradle）
+- [ ] M3-② docs search/fetch — 擱置，待 Windows 端 DevTools 查 developer.android.com 實際 search endpoint 後再定（候選見 `notes/m3-docs-search.md`）
 
 ## 卡點
 
