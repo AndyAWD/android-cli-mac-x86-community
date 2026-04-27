@@ -9,14 +9,30 @@ class SdkNotFoundError(RuntimeError):
     pass
 
 
+def _platform_default_sdk_paths() -> list[Path]:
+    """Per-OS default install locations Android Studio uses out of the box."""
+    candidates: list[Path] = []
+    local_appdata = os.environ.get("LOCALAPPDATA")
+    if local_appdata:
+        candidates.append(Path(local_appdata) / "Android" / "Sdk")
+    candidates.extend([
+        Path.home() / "Library" / "Android" / "sdk",  # macOS
+        Path.home() / "AppData" / "Local" / "Android" / "Sdk",  # Windows fallback
+        Path.home() / "Android" / "Sdk",  # Linux
+    ])
+    return candidates
+
+
 def find_sdk_root() -> Path:
     """Return the Android SDK root, or raise SdkNotFoundError.
 
     Resolution order matches the convention used by Android tooling:
     1. $ANDROID_HOME
     2. $ANDROID_SDK_ROOT
-    3. ~/Library/Android/sdk (macOS default)
-    4. ~/Android/Sdk (Linux default, kept for dev on non-Mac hosts)
+    3. %LOCALAPPDATA%\\Android\\Sdk (Windows default, Android Studio)
+    4. ~/Library/Android/sdk (macOS default)
+    5. ~/AppData/Local/Android/Sdk (Windows fallback when LOCALAPPDATA unset)
+    6. ~/Android/Sdk (Linux default)
     """
     for env_var in ("ANDROID_HOME", "ANDROID_SDK_ROOT"):
         value = os.environ.get(env_var)
@@ -25,10 +41,11 @@ def find_sdk_root() -> Path:
             if path.is_dir():
                 return path
 
-    for default in (
-        Path.home() / "Library" / "Android" / "sdk",
-        Path.home() / "Android" / "Sdk",
-    ):
+    seen: set[Path] = set()
+    for default in _platform_default_sdk_paths():
+        if default in seen:
+            continue
+        seen.add(default)
         if default.is_dir():
             return default
 

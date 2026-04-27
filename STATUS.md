@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線。下一階段是端到端驗證。
+M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線、Windows 端跨平台修補完成。下一階段是 macOS / Linux 端的端到端驗證。
 
 ## 最近動向
 
+- 2026-04-28：**Windows 跨平台修補** — `android_home.py` 加入 `%LOCALAPPDATA%\Android\Sdk` 與 `~/AppData/Local/Android/Sdk` 兩個 Windows 預設路徑（Android Studio 預設安裝位置）；`tools/_subprocess.resolve()` 在 Windows 對絕對路徑探測 PATHEXT 副檔名（`.exe` / `.bat` / ...），讓 `tool_path("platform-tools/adb")` 在 Windows 也找得到 `adb.exe`。新增 5 個測試。Windows 真實機器（已裝 Android Studio）端到端通過：`info` 自動找到 SDK 並印 adb 版本、`emulator list` 列出 AVD。pytest 115 passed（+5）。
 - 2026-04-28：**v0.1.0 釋出 + GitHub Actions CI 上線** — `.github/workflows/test.yml` 對 ubuntu/macos/windows × Python 3.11/3.12/3.13 共 9 個矩陣跑 `pytest -q`，push/PR 觸發。版本由 `0.1.0.dev0` → `0.1.0`，打 annotated tag `v0.1.0` 並 `gh release create`，自此 `update` 指令真的有東西可裝。
 - 2026-04-28：**M4-(2) `update` 完成** — `utils/self_update.py` 查 GitHub Releases API（`/releases/latest`），無 release 回 None；`is_newer` 比版本（strip `v` prefix）；`pip_install_command` 用 `sys.executable -m pip` 確保跑當前環境的 pip。`commands/update.py`：預設裝最新 tag、`--check` 只檢查不裝、`--url` 安裝任意 pip target、`--repo` 改 owner/name；無 release 時 fallback 裝 default branch。新增 17 個測試（mock GitHub API + mock pip subprocess）。
 - 2026-04-28：**M4-(3) 多範本完成** — 新增 `empty_views`（AppCompat + ConstraintLayout + ViewBinding，給不想用 Compose 的使用者）與 `compose_navigation`（Compose + navigation-compose 2.7.7，含 Home → Detail 路由示範）。`create` 加 `--list-templates`；參數改成 path/name/package 都改 Optional 以便支援單跑 `--list-templates`。新增 4 個測試。Windows 真實 GitHub `update --check` 跑通（顯示 no published releases 且 exit 0）。pytest 110 passed（93 → 110，+17 update +4 templates）。
@@ -38,7 +39,7 @@ M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線。下一階段是端到
 - [x] M4-(1) `skills add/remove/list/find`（utils/skills_repo + commands/skills，GitHub tarball + subtree 解壓 + zip-slip 防護）
 - [x] M4-(3) 多範本（templates/empty_views + templates/compose_navigation；`create --list-templates`）
 - [x] M4-(2) `update`（utils/self_update + commands/update，GitHub Releases API + `sys.executable -m pip`，含 --check / --url / --repo）
-- [x] 110 個單元 + CLI 測試通過
+- [x] 115 個單元 + CLI 測試通過（含 Windows SDK 路徑解析與 PATHEXT 探測）
 - [x] v0.1.0 GitHub Release（tag `v0.1.0`）
 - [x] GitHub Actions CI（ubuntu/macos/windows × Python 3.11/3.12/3.13）
 

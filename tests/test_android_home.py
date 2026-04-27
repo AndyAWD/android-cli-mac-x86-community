@@ -31,7 +31,22 @@ def test_raises_when_nothing_found(tmp_path: Path,
                                    monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("ANDROID_HOME", raising=False)
     monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
     with pytest.raises(SdkNotFoundError):
         find_sdk_root()
+
+
+def test_finds_via_localappdata(tmp_path: Path,
+                                monkeypatch: pytest.MonkeyPatch):
+    """Windows: Android Studio installs under %LOCALAPPDATA%\\Android\\Sdk."""
+    monkeypatch.delenv("ANDROID_HOME", raising=False)
+    monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
+    sdk = tmp_path / "Android" / "Sdk"
+    sdk.mkdir(parents=True)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    # Make sure other defaults don't accidentally win.
+    monkeypatch.setenv("HOME", str(tmp_path / "elsewhere"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "elsewhere"))
+    assert find_sdk_root() == sdk

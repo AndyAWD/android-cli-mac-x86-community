@@ -1,8 +1,10 @@
 """Shared subprocess helpers used by tool wrappers."""
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,16 +24,39 @@ class ToolResult:
         return self.returncode == 0
 
 
+def _windows_executable_suffixes() -> list[str]:
+    raw = os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")
+    return [s.lower() for s in raw.split(os.pathsep) if s]
+
+
+def _resolve_with_suffix(path: Path) -> Path | None:
+    """On Windows, callers pass an extensionless absolute path (e.g. .../adb).
+    Try each PATHEXT suffix to find the real executable.
+    """
+    if path.exists():
+        return path
+    if sys.platform != "win32":
+        return None
+    for suffix in _windows_executable_suffixes():
+        candidate = path.with_name(path.name + suffix)
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def resolve(executable: str | Path) -> Path:
     """Return an absolute Path to the executable, or raise ToolNotFoundError.
 
     Accepts either a bare name (looked up via PATH) or an absolute path.
+    On Windows, an absolute path missing its executable suffix (.exe / .bat /
+    ...) is probed against PATHEXT so callers can stay platform-neutral.
     """
     path = Path(executable)
     if path.is_absolute():
-        if not path.exists():
+        resolved = _resolve_with_suffix(path)
+        if resolved is None:
             raise ToolNotFoundError(f"{path} does not exist")
-        return path
+        return resolved
     found = shutil.which(str(executable))
     if not found:
         raise ToolNotFoundError(f"{executable} not found on PATH")
