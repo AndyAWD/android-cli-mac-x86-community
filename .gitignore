@@ -11,3 +11,10 @@ dist/
 .ruff_cache/
 .DS_Store
 *.swp
+
+# IDE
+.idea/
+.vscode/
+
+# Claude Code
+.claude/
