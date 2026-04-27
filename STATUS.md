@@ -2,10 +2,11 @@
 
 ## 當前焦點
 
-M3-① `screen resolve` 完成。M3-② 擱置（前提錯誤，見 `notes/m3-docs-search.md`）；下一步可直接進 M3-③ `create`。
+M3-① 與 M3-③ 完成。M3-② 擱置待 Windows 端查 search endpoint。
 
 ## 最近動向
 
+- 2026-04-27：M3-③ `create` 完成 — `empty_compose` 範本（11 檔，AGP 8.5 / Kotlin 2.0 / Compose BOM 2024.06）、scaffold 變數替換含路徑（`{{package_path}}`）、gradle wrapper 走 PATH（沒裝就 warning skip）。`utils/scaffold.py` 通用化。pytest 55 passed（+6 scaffold、+4 CLI）。
 - 2026-04-27：M3-② 擱置 — 原假設「developer.android.com 用 Algolia DocSearch」WebFetch 兩次都驗不到，需在 Windows 端 DevTools 查實際搜尋後端。研究筆記與候選方案見 `notes/m3-docs-search.md`。
 - 2026-04-27：M3-① `screen resolve` 完成 — 結構式 selector（--text/--id/--desc/--class），bounds 解析含中心點。重構：抽 `_capture_xml` → `utils/uiautomator.capture_layout_xml`。pytest 45 passed（+10 unit、+4 CLI）。
 - 2026-04-27：Intel MBP 接手 — sdkmanager / avdmanager 透過 `brew install --cask android-commandlinetools` 取得，並 symlink 至 `~/Library/Android/sdk/cmdline-tools/latest/`（cli.py 硬編碼此路徑）。editable install + pytest 31 passed，三個煙霧指令（--version / info / emulator list）通過。端到端（emulator start / run apk）尚未實跑。
@@ -26,7 +27,8 @@ M3-① `screen resolve` 完成。M3-② 擱置（前提錯誤，見 `notes/m3-do
 - [x] `utils/layout_xml.py`（uiautomator dump XML → JSON tree、diff 演算法）
 - [x] `cli.py` 串起所有 8 個頂層子指令
 - [x] M3-① `screen resolve`（find_nodes / parse_bounds、capture_layout_xml 抽出共用）
-- [x] 45 個單元 + CLI 測試通過
+- [x] M3-③ `create`（utils/scaffold + empty_compose 範本 + gradle wrapper 走 PATH）
+- [x] 55 個單元 + CLI 測試通過
 
 ## 進行中
 
@@ -35,7 +37,7 @@ M3-① `screen resolve` 完成。M3-② 擱置（前提錯誤，見 `notes/m3-do
 ## 下一步
 
 - [ ] 端到端整合測試：emulator start → run --apks → screen capture / resolve（已有 AVD `Medium_Phone_API_36.1`）
-- [ ] M3-③ create（先支援 1 個範本，wrapper 策略：scaffold 後跑 `gradle wrapper`，要求 PATH 有 gradle）
+- [ ] 端到端：用 `create` 真產一個專案、`gradle wrapper` 後跑 `./gradlew assembleDebug` 驗 build 能過（環境裝的 Gradle 9.3.1 vs 範本 AGP 8.5 相容性待測）
 - [ ] M3-② docs search/fetch — 擱置，待 Windows 端 DevTools 查 developer.android.com 實際 search endpoint 後再定（候選見 `notes/m3-docs-search.md`）
 
 ## 卡點
