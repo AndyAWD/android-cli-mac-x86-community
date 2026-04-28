@@ -26,7 +26,7 @@ class ToolResult:
 
 def _windows_executable_suffixes() -> list[str]:
     raw = os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")
-    return [s.lower() for s in raw.split(os.pathsep) if s]
+    return [s.lower() for s in raw.split(";") if s]
 
 
 def _resolve_with_suffix(path: Path) -> Path | None:
