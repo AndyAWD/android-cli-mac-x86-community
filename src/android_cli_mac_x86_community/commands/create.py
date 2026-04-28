@@ -24,6 +24,9 @@ def _validate_package(package: str) -> None:
         )
 
 
+_WRAPPER_GRADLE_VERSION = "8.7"
+
+
 def _run_gradle_wrapper(target: Path) -> None:
     if shutil.which("gradle") is None:
         typer.echo(
@@ -34,7 +37,12 @@ def _run_gradle_wrapper(target: Path) -> None:
         )
         return
     result = subprocess.run(
-        ["gradle", "wrapper"], cwd=target, capture_output=True, text=True
+        [
+            "gradle", "wrapper",
+            "--gradle-version", _WRAPPER_GRADLE_VERSION,
+            "--distribution-type", "bin",
+        ],
+        cwd=target, capture_output=True, text=True,
     )
     if result.returncode != 0:
         typer.echo(result.stderr, err=True, nl=False)
