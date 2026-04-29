@@ -104,9 +104,16 @@ def find_emulator_serial_by_avd(avd_name: str) -> str | None:
     return None
 
 
-def uiautomator_dump(*, serial: str | None = None) -> ToolResult:
-    """Dump UI hierarchy to /sdcard/window_dump.xml on device."""
-    return shell("uiautomator dump /sdcard/window_dump.xml", serial=serial)
+def uiautomator_dump(*, serial: str | None = None,
+                     remote_path: str = "/data/local/tmp/window_dump.xml"
+                     ) -> ToolResult:
+    """Dump UI hierarchy to `remote_path` on device.
+
+    Defaults to /data/local/tmp/ because /sdcard/ is unreadable via `adb pull`
+    on Android 14+ due to scoped storage; /data/local/tmp/ is shell-writable
+    and shell-readable on every supported API level.
+    """
+    return shell(f"uiautomator dump {remote_path}", serial=serial)
 
 
 def pull(remote: str, local: str | Path, *, serial: str | None = None) -> ToolResult:

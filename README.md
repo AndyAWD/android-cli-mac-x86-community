@@ -19,16 +19,48 @@ Requires Python 3.11+ on Intel macOS, plus the Android SDK command-line tools.
 
 ```bash
 # 1. Prerequisites (one-time)
-brew install openjdk@17 python@3.11
-# Then install Android command-line tools per:
-# https://developer.android.com/studio#command-line-tools-only
+brew install openjdk@17 gradle pipx
+brew install --cask android-commandlinetools
 
-# 2. Install this CLI from GitHub
-pip install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+# Copy (do NOT symlink) cmdline-tools into the canonical SDK layout.
+# A symlink resolves back to /usr/local/share/android-commandlinetools and
+# tricks sdkmanager into using that path as the SDK root, hiding any
+# build-tools / platforms / system-images you install.
+mkdir -p ~/Library/Android/sdk/cmdline-tools
+cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest \
+      ~/Library/Android/sdk/cmdline-tools/latest
+
+# Tell tools where the SDK lives (add to your shell rc file).
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+# 2. Install this CLI from GitHub via pipx
+pipx ensurepath  # one-time; adds ~/.local/bin to PATH — restart shell or `source ~/.zshrc`
+pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+
+# Later, to upgrade:
+# pipx upgrade android-cli-mac-x86-community
 
 # 3. Verify
 android-cli-mac-x86-community info
 ```
+
+### Why each prerequisite
+
+- **`pipx`** — installs Python CLI tools into isolated virtualenvs and exposes
+  them on `PATH`. Recommended over plain `pip install` because Homebrew's
+  Python is `EXTERNALLY-MANAGED` (PEP 668) and global `pip install` is
+  refused. `pipx` also pulls a compatible Python automatically, so you don't
+  need to pin `python@3.11` yourself.
+- **`gradle`** — `create` runs `gradle wrapper` after scaffolding so the new
+  project gets `gradlew` / `gradlew.bat`. Without it, the wrapper step is
+  skipped and you can't `./gradlew assembleDebug` until you install Gradle
+  yourself.
+- **`cp -R` instead of `ln -s`** — see comment above; symlinking confuses
+  `sdkmanager`'s SDK-root detection.
+- **`ANDROID_HOME`** — Required by `assembleDebug` (the AGP build) even after
+  this CLI finds the SDK on its own. Without it, your generated Gradle project
+  will fail to build.
 
 ## Quick start
 

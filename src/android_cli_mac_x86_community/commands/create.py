@@ -9,6 +9,7 @@ from typing import Optional
 
 import typer
 
+from ..utils.android_home import SdkNotFoundError, find_sdk_root
 from ..utils.scaffold import TargetNotEmptyError, scaffold
 
 
@@ -92,8 +93,10 @@ def create_cmd(
         raise typer.Exit(2)
 
     target = path.resolve()
+    theme_name = re.sub(r"\W+", "", name) or "App"
     vars = {
         "app_name": name,
+        "theme_name": theme_name,
         "package": package,
         "package_path": package.replace(".", "/"),
     }
@@ -105,5 +108,29 @@ def create_cmd(
 
     typer.echo(f"created {len(created)} files in {target}")
 
+    _write_local_properties(target)
+
     if not no_wrapper:
         _run_gradle_wrapper(target)
+
+
+def _write_local_properties(target: Path) -> None:
+    """Write `local.properties` pointing at the detected SDK root.
+
+    AGP reads `sdk.dir` from this file when ANDROID_HOME isn't set, so writing
+    it removes one common cause of `./gradlew assembleDebug` failures on a
+    freshly-scaffolded project.
+    """
+    try:
+        sdk_root = find_sdk_root()
+    except SdkNotFoundError:
+        typer.echo(
+            "warning: Android SDK not found; skipped writing local.properties. "
+            "Set ANDROID_HOME before running ./gradlew assembleDebug.",
+            err=True,
+        )
+        return
+    sdk_dir = str(sdk_root).replace("\\", "\\\\").replace(":", "\\:")
+    (target / "local.properties").write_text(
+        f"sdk.dir={sdk_dir}\n", encoding="utf-8"
+    )

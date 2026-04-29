@@ -176,3 +176,91 @@ def test_create_requires_args_without_list_templates(
     assert result.exit_code == 2
     out = result.output + (result.stderr or "")
     assert "required" in out.lower()
+
+
+def test_create_writes_local_properties_when_sdk_detected(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    fake_sdk = tmp_path / "fake-sdk"
+    fake_sdk.mkdir()
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.create.find_sdk_root",
+        lambda: fake_sdk,
+    )
+
+    target = tmp_path / "WithSdk"
+    result = runner.invoke(
+        app,
+        [
+            "create", str(target),
+            "--name", "WithSdk",
+            "--package", "com.example.withsdk",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    local_props = (target / "local.properties").read_text(encoding="utf-8")
+    assert local_props.startswith("sdk.dir=")
+    # Spaces and slashes survive; backslashes/colons are escaped per
+    # java.util.Properties rules. On POSIX the path has neither, so a
+    # straightforward equality check is enough.
+    assert str(fake_sdk) in local_props.replace("\\:", ":").replace("\\\\", "\\")
+
+
+def test_create_warns_when_sdk_missing(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from android_cli_mac_x86_community.utils.android_home import SdkNotFoundError
+
+    def raise_missing():
+        raise SdkNotFoundError("not found")
+
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.create.find_sdk_root",
+        raise_missing,
+    )
+
+    target = tmp_path / "NoSdk"
+    result = runner.invoke(
+        app,
+        [
+            "create", str(target),
+            "--name", "NoSdk",
+            "--package", "com.example.nosdk",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert not (target / "local.properties").exists()
+    combined = result.output + (result.stderr or "")
+    assert "SDK not found" in combined or "ANDROID_HOME" in combined
+
+
+def test_create_sanitizes_theme_id_for_name_with_spaces(
+    runner: CliRunner, tmp_path: Path
+):
+    target = tmp_path / "App Compose"
+    result = runner.invoke(
+        app,
+        [
+            "create", str(target),
+            "--name", "App Compose",
+            "--package", "com.example.appcompose",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    # Resource ID must not contain whitespace (AAPT2 rejects it).
+    themes = (target / "app" / "src" / "main" / "res" / "values"
+              / "themes.xml").read_text(encoding="utf-8")
+    assert "Theme.AppCompose" in themes
+    assert "App Compose" not in themes
+
+    manifest = (target / "app" / "src" / "main"
+                / "AndroidManifest.xml").read_text(encoding="utf-8")
+    assert "@style/Theme.AppCompose" in manifest
+    assert "@style/Theme.App Compose" not in manifest
+
+    # User-facing label keeps the original spaced name.
+    strings = (target / "app" / "src" / "main" / "res" / "values"
+               / "strings.xml").read_text(encoding="utf-8")
+    assert "App Compose" in strings

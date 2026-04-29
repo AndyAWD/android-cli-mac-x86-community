@@ -19,16 +19,44 @@ Google 的 [Android CLI](https://developer.android.com/tools/agents/android-cli/
 
 ```bash
 # 1. 前置（一次性）
-brew install openjdk@17 python@3.11
-# 接著依下面的官方說明安裝 Android command-line tools：
-# https://developer.android.com/studio#command-line-tools-only
+brew install openjdk@17 gradle pipx
+brew install --cask android-commandlinetools
 
-# 2. 從 GitHub 安裝本工具
-pip install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+# 把 cmdline-tools 「複製」（不要 symlink）到標準 SDK 路徑。
+# 用 symlink 會被 sdkmanager 解析回 /usr/local/share/android-commandlinetools，
+# 它把那當成 SDK 根目錄，會看不到後續安裝的 build-tools / platforms / system-images。
+mkdir -p ~/Library/Android/sdk/cmdline-tools
+cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest \
+      ~/Library/Android/sdk/cmdline-tools/latest
+
+# 告訴工具鏈 SDK 在哪（建議寫進 shell rc）。
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+# 2. 透過 pipx 從 GitHub 安裝本工具
+pipx ensurepath  # 一次性；把 ~/.local/bin 加進 PATH，請重開 shell 或 `source ~/.zshrc`
+pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+
+# 之後升級用：
+# pipx upgrade android-cli-mac-x86-community
 
 # 3. 驗證
 android-cli-mac-x86-community info
 ```
+
+### 為什麼每個前置都需要
+
+- **`pipx`**：把 Python 命令列工具裝進隔離的 virtualenv，並把指令暴露到
+  `PATH`。建議用 `pipx` 而不是直接 `pip install`，因為 Homebrew 的 Python 標
+  記為 `EXTERNALLY-MANAGED`（PEP 668），全域 `pip install` 會被擋下。`pipx`
+  也會自動帶一個相容的 Python，所以你不用再另外釘 `python@3.11`。
+- **`gradle`**：`create` 在 scaffold 完成後會呼叫 `gradle wrapper` 來產生
+  `gradlew` / `gradlew.bat`。少了它，wrapper 步驟會被跳過，產生的專案就無法
+  `./gradlew assembleDebug` 直到自己另裝 Gradle。
+- **要用 `cp -R` 而不是 `ln -s`**：原因如上方註解所說，symlink 會讓
+  `sdkmanager` 把連結目標誤判為 SDK 根目錄。
+- **`ANDROID_HOME`**：跑 `assembleDebug`（AGP 建置）時會讀這個變數，即便本
+  工具能自己找到 SDK，產生出來的 Gradle 專案沒設它仍然 build 不過去。
 
 ## 快速上手
 
