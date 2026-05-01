@@ -1,11 +1,14 @@
-[![English](https://img.shields.io/badge/lang-English-blue?style=for-the-badge)](./README.md)
-[![繁體中文](https://img.shields.io/badge/lang-繁體中文-lightgrey?style=for-the-badge)](./README.zh-TW.md)
-
 # android-cli-mac-x86-community
 
 **This is an unofficial community port. Not affiliated with or endorsed by Google LLC. Please do not report issues to Google.**
 
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/AndyAWD/android-cli-mac-x86-community/releases/tag/v0.1.0)
+[![English](https://img.shields.io/badge/lang-English-blue?style=for-the-badge)](./README.md)
+[![繁體中文](https://img.shields.io/badge/lang-繁體中文-lightgrey?style=for-the-badge)](./README.zh-TW.md)
+
 A command-line tool that brings an Android-CLI-like experience to **Intel macOS (x86_64)**, where Google does not ship an official binary. Internally it wraps `adb`, `sdkmanager`, `avdmanager`, and the Android emulator — all of which are officially supported on Intel macOS.
+
+While optimized for Intel Mac, this tool also features **experimental support for Windows and Linux**, providing a consistent Android CLI experience across platforms.
 
 ## Why this exists
 
@@ -39,10 +42,7 @@ pipx ensurepath  # one-time; adds ~/.local/bin to PATH — restart shell or `sou
 pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
 
 # Later, to upgrade:
-# pipx upgrade android-cli-mac-x86-community
-
-# 3. Verify
-android-cli-mac-x86-community info
+android-cli-mac-x86-community update
 ```
 
 ### Why each prerequisite
@@ -78,7 +78,7 @@ android-cli-mac-x86-community screen capture > out.png
 |---|---|
 | `info [<field>]` | Print SDK location and environment info |
 | `init` | Initialize local config and skills directory |
-| `sdk list` | List installed and available SDK packages |
+| `sdk list` | List installed and available SDK packages (use `--all` for full repo) |
 | `sdk install <pkg>` | Install an SDK package |
 | `sdk update` | Update one or all packages |
 | `sdk remove <pkg>` | Remove a package |
@@ -89,13 +89,13 @@ android-cli-mac-x86-community screen capture > out.png
 | `emulator remove` | Delete a virtual device |
 | `run --apks <files>` | Deploy and launch an APK |
 | `screen capture` | Capture device screen as PNG |
-| `screen resolve` | Locate UI elements visually |
+| `screen resolve` | Locate UI elements visually (JSON output) |
 | `layout` | Dump the layout tree |
-| `create` | Scaffold a new Android project |
+| `create` | Scaffold a new Android project (use `--list-templates` to see options) |
 | `describe` | Output JSON describing a project |
-| `docs search/fetch` | Search/fetch Android documentation |
+| `docs search/fetch` | Search/fetch Android documentation (offline KB) |
 | `skills add/remove/list/find` | Manage skills (fetched live from `github.com/android/skills`) |
-| `update` | Self-update |
+| `update` | Self-update from GitHub (use `--check` to check only) |
 
 Run `android-cli-mac-x86-community --help` or `android-cli-mac-x86-community help <command>` for full options.
 
