@@ -6,6 +6,7 @@ M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線、Windows 與 macOS 跨
 
 ## 最近動向
 
+- 2026-05-02：**Intel MBP 端到端全鏈驗證通過** — 用 `compose_navigation` 範本走完 `create` → `./gradlew assembleDebug` → `emulator start pixel_api31` → `run --apks` → `screen capture` → 點「Open detail 42」按鈕 → 再 capture，Home 與 Detail 兩頁都正確 render（320×640 PNG）。Build 1m 17s（依賴已快取，非首次）；APK 8.7 MB；`mResumedActivity = com.example.e2etestapp/.MainActivity`、`pidof` 拿到 PID。**補完上一條「下一步」中「驗 `run --apks` 安裝剛 build 出的 APK」**。觀察：cold boot 後 SystemUI 偶發 ANR（系統層 dialog 蓋掉畫面），`adb shell am crash com.android.systemui` 重啟即恢復；繞過 CLI 直跑 `emulator -avd` 也重現，與本專案無關，但已記入「下一步」做 helper。順帶清理舊 AVD（`test_api32`/`test_api33`/`Medium_Phone_API_36.1`），本機只留 `pixel_api31`。
 - 2026-04-28：**macOS 端到端驗證 + 跨平台修補** — 兩個 bug 修掉：(1) `_subprocess._windows_executable_suffixes()` 切 PATHEXT 寫死用 `;`（不是 `os.pathsep`），讓 monkeypatch sys.platform 在非 Windows 也能正確切（`PATHEXT` 規格永遠分號分隔，跟 PATH 不同），修好 `test_resolve_finds_exe_suffix_on_windows` 在 macOS 失敗。(2) `commands/create._run_gradle_wrapper()` 加 `--gradle-version 8.7 --distribution-type bin`，避開環境 Gradle 9.3.1 對 AGP 8.5 plugin 解析卡 5+ 分鐘的相容性問題，wrapper 統一鎖在 Gradle 8.7 (AGP 8.5 對應穩定版)。實機驗證：`docs search`/`skills list`/`update --check` 全通過；三範本（empty_compose / empty_views / compose_navigation）`create` + `./gradlew assembleDebug` 全部 BUILD SUCCESSFUL（首次 12m33s 含下載，後續 5m9s / 1m40s）；`screen capture` 抓到 1080×2400 PNG。pytest 115 passed。
 - 2026-04-28：**Windows 跨平台修補** — `android_home.py` 加入 `%LOCALAPPDATA%\Android\Sdk` 與 `~/AppData/Local/Android/Sdk` 兩個 Windows 預設路徑（Android Studio 預設安裝位置）；`tools/_subprocess.resolve()` 在 Windows 對絕對路徑探測 PATHEXT 副檔名（`.exe` / `.bat` / ...），讓 `tool_path("platform-tools/adb")` 在 Windows 也找得到 `adb.exe`。新增 5 個測試。Windows 真實機器（已裝 Android Studio）端到端通過：`info` 自動找到 SDK 並印 adb 版本、`emulator list` 列出 AVD。pytest 115 passed（+5）。
 - 2026-04-28：**v0.1.0 釋出 + GitHub Actions CI 上線** — `.github/workflows/test.yml` 對 ubuntu/macos/windows × Python 3.11/3.12/3.13 共 9 個矩陣跑 `pytest -q`，push/PR 觸發。版本由 `0.1.0.dev0` → `0.1.0`，打 annotated tag `v0.1.0` 並 `gh release create`，自此 `update` 指令真的有東西可裝。
@@ -50,8 +51,9 @@ M3 與 M4 全部完成、v0.1.0 已釋出、CI 已上線、Windows 與 macOS 跨
 
 ## 下一步
 
-- [ ] 端到端：在 ARM Mac 或更輕量 system image（API 33/34）上把 `screen resolve` 跑通，並驗 `run --apks` 安裝剛 build 出的 APK
+- [ ] 端到端：在 ARM Mac 或更輕量 system image（API 33/34）上把 `screen resolve` 跑通
 - [ ] 把 `--gradle-version` 開成 `commands/create` 的選項或寫進範本 `gradle/wrapper/gradle-wrapper.properties` 預設值（目前硬編碼於 `_WRAPPER_GRADLE_VERSION = "8.7"`）
+- [ ] `emulator start` UX helper：加 `--wait-boot`（內建 `adb wait-for-device` + 輪詢 `sys.boot_completed` / `init.svc.bootanim`）與 `--unlock`（內建 keyevent 82 + 4）旗標，目前 README 要使用者自己用 adb 串。動機：cold boot snapshot 還原時 SystemUI 偶發 ANR（system_server ↔ SystemUI binder 競爭，繞過 CLI 直跑 `emulator -avd` 也重現），可一併在 helper 內做「ANR dialog 偵測 → `am crash com.android.systemui` 重啟」，e2e 流程不用使用者手動處理。
 
 ## 卡點
 
