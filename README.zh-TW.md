@@ -51,7 +51,8 @@ android-cli-mac-x86-community update
   記為 `EXTERNALLY-MANAGED`（PEP 668），全域 `pip install` 會被擋下。`pipx`
   也會自動帶一個相容的 Python，所以你不用再另外釘 `python@3.11`。
 - **`gradle`**：`create` 在 scaffold 完成後會呼叫 `gradle wrapper` 來產生
-  `gradlew` / `gradlew.bat`。少了它，wrapper 步驟會被跳過，產生的專案就無法
+  `gradlew` / `gradlew.bat`（預設使用 Gradle 8.7，可透過 `--gradle-version` 覆寫，
+  或用 `--no-wrapper` 完全跳過）。少了它，wrapper 步驟會被跳過，產生的專案就無法
   `./gradlew assembleDebug` 直到自己另裝 Gradle。
 - **要用 `cp -R` 而不是 `ln -s`**：原因如上方註解所說，symlink 會讓
   `sdkmanager` 把連結目標誤判為 SDK 根目錄。

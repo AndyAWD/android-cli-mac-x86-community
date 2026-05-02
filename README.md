@@ -53,7 +53,8 @@ android-cli-mac-x86-community update
   refused. `pipx` also pulls a compatible Python automatically, so you don't
   need to pin `python@3.11` yourself.
 - **`gradle`** — `create` runs `gradle wrapper` after scaffolding so the new
-  project gets `gradlew` / `gradlew.bat`. Without it, the wrapper step is
+  project gets `gradlew` / `gradlew.bat` (defaults to Gradle 8.7; override with
+  `--gradle-version`, or skip entirely with `--no-wrapper`). Without it, the wrapper step is
   skipped and you can't `./gradlew assembleDebug` until you install Gradle
   yourself.
 - **`cp -R` instead of `ln -s`** — see comment above; symlinking confuses

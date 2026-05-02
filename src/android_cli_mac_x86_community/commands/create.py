@@ -28,7 +28,7 @@ def _validate_package(package: str) -> None:
 _WRAPPER_GRADLE_VERSION = "8.7"
 
 
-def _run_gradle_wrapper(target: Path) -> None:
+def _run_gradle_wrapper(target: Path, gradle_version: str) -> None:
     if shutil.which("gradle") is None:
         typer.echo(
             "warning: 'gradle' not found in PATH; skipping wrapper generation. "
@@ -40,7 +40,7 @@ def _run_gradle_wrapper(target: Path) -> None:
     result = subprocess.run(
         [
             "gradle", "wrapper",
-            "--gradle-version", _WRAPPER_GRADLE_VERSION,
+            "--gradle-version", gradle_version,
             "--distribution-type", "bin",
         ],
         cwd=target, capture_output=True, text=True,
@@ -65,6 +65,13 @@ def create_cmd(
         help="Template to use"),
     list_templates: bool = typer.Option(False, "--list-templates",
         help="List available templates and exit"),
+    gradle_version: str = typer.Option(
+        _WRAPPER_GRADLE_VERSION, "--gradle-version",
+        help=(
+            f"Gradle wrapper version (default: {_WRAPPER_GRADLE_VERSION}, "
+            "matched to AGP 8.5; bump only if you also bump AGP)."
+        ),
+    ),
     no_wrapper: bool = typer.Option(False, "--no-wrapper",
         help="Skip running `gradle wrapper` after scaffolding"),
 ) -> None:
@@ -111,7 +118,7 @@ def create_cmd(
     _write_local_properties(target)
 
     if not no_wrapper:
-        _run_gradle_wrapper(target)
+        _run_gradle_wrapper(target, gradle_version)
 
 
 def _write_local_properties(target: Path) -> None:
