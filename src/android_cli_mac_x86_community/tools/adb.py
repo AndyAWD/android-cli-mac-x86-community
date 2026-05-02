@@ -37,6 +37,10 @@ def install(apks: list[str | Path], *, serial: str | None = None,
     return run(_adb_path(), args)
 
 
+def wait_for_device(serial: str | None = None) -> ToolResult:
+    args = _device_args(serial) + ["wait-for-device"]
+    return run(_adb_path(), args)
+
 def shell(command: str, *, serial: str | None = None) -> ToolResult:
     args = _device_args(serial) + ["shell", command]
     return run(_adb_path(), args)

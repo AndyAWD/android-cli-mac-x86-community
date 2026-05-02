@@ -90,6 +90,65 @@ def test_emulator_start_invokes_start_detached(
     assert "4242" in result.output
 
 
+def test_emulator_start_with_wait_boot_and_unlock(
+    runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.emulator.emu_tool.start_detached",
+        lambda name: 4242,
+    )
+
+    # 模擬 1 秒後找到 serial
+    find_count = 0
+    def fake_find_serial(name):
+        nonlocal find_count
+        find_count += 1
+        if find_count > 1:
+            return "emulator-5554"
+        return None
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.emulator.adb.find_emulator_serial_by_avd",
+        fake_find_serial,
+    )
+
+    waited_device = False
+    def fake_wait(serial):
+        nonlocal waited_device
+        waited_device = True
+        return _ok()
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.emulator.adb.wait_for_device",
+        fake_wait,
+    )
+
+    shell_cmds = []
+    def fake_shell(cmd, serial=None):
+        shell_cmds.append(cmd)
+        if "getprop sys.boot_completed" in cmd:
+            return _ok("1\n")
+        if "dumpsys window windows" in cmd:
+            return _ok("Some random window\nApplication Not Responding: com.android.systemui\n")
+        return _ok()
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.emulator.adb.shell",
+        fake_shell,
+    )
+
+    # 加速測試
+    monkeypatch.setattr("time.sleep", lambda secs: None)
+
+    result = runner.invoke(app, ["emulator", "start", "--name", "pixel7", "--wait-boot", "--unlock"])
+    assert result.exit_code == 0, result.output
+
+    assert waited_device
+    assert "getprop sys.boot_completed" in shell_cmds
+    assert "dumpsys window windows" in shell_cmds
+    assert "am crash com.android.systemui" in shell_cmds
+    assert "input keyevent 82" in shell_cmds
+    assert "input keyevent 4" in shell_cmds
+    assert "Emulator is ready." in result.output
+
+
 def test_emulator_stop_when_not_running_returns_error(
     runner: CliRunner, monkeypatch: pytest.MonkeyPatch
 ):

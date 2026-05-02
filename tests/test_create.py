@@ -18,8 +18,61 @@ def stub_gradle_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     # Avoid invoking the real gradle binary during tests.
     monkeypatch.setattr(
         "android_cli_mac_x86_community.commands.create._run_gradle_wrapper",
-        lambda target: None,
+        lambda target, gradle_version: None,
     )
+
+
+def test_create_passes_gradle_version_flag(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    captured: list[str] = []
+
+    def fake_run_wrapper(target, gradle_version):
+        captured.append(gradle_version)
+
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.create._run_gradle_wrapper",
+        fake_run_wrapper,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "create", str(tmp_path / "V2"),
+            "--name", "V2",
+            "--package", "com.example.v2",
+            "--gradle-version", "8.9",
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured == ["8.9"]
+
+
+def test_create_default_gradle_version_is_8_7(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from android_cli_mac_x86_community.commands.create import _WRAPPER_GRADLE_VERSION
+
+    captured: list[str] = []
+
+    def fake_run_wrapper(target, gradle_version):
+        captured.append(gradle_version)
+
+    monkeypatch.setattr(
+        "android_cli_mac_x86_community.commands.create._run_gradle_wrapper",
+        fake_run_wrapper,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "create", str(tmp_path / "V1"),
+            "--name", "V1",
+            "--package", "com.example.v1",
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured == [_WRAPPER_GRADLE_VERSION]
 
 
 def test_create_scaffolds_empty_compose_into_tmp(
