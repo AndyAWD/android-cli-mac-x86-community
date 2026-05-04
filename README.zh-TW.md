@@ -20,29 +20,32 @@ Google 的 [Android CLI](https://developer.android.com/tools/agents/android-cli/
 
 需要 Intel macOS 上有 Python 3.11+ 與 Android SDK 命令列工具。
 
+### 1. 環境設定
+
 ```bash
-# 1. 前置（一次性）
 brew install openjdk@17 gradle pipx
 brew install --cask android-commandlinetools
 
-# 把 cmdline-tools 「複製」（不要 symlink）到標準 SDK 路徑。
-# 用 symlink 會被 sdkmanager 解析回 /usr/local/share/android-commandlinetools，
-# 它把那當成 SDK 根目錄，會看不到後續安裝的 build-tools / platforms / system-images。
 mkdir -p ~/Library/Android/sdk/cmdline-tools
-cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest \
-      ~/Library/Android/sdk/cmdline-tools/latest
+cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest ~/Library/Android/sdk/cmdline-tools/latest
 
-# 告訴工具鏈 SDK 在哪（建議寫進 shell rc）。
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-# 2. 透過 pipx 從 GitHub 安裝本工具
-pipx ensurepath  # 一次性；把 ~/.local/bin 加進 PATH，請重開 shell 或 `source ~/.zshrc`
-pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
-
-# 之後升級用：
-android-cli-mac-x86-community update
+yes | sdkmanager --licenses
+sdkmanager "platform-tools" "emulator"
 ```
+*（註：請將上方 `export` 開頭的兩行加入你的 `~/.zshrc` 或 `~/.bash_profile`）*
+
+### 2. 安裝 CLI
+
+```bash
+pipx ensurepath
+pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+```
+*（註：執行完 `pipx ensurepath` 後可能需要重啟終端機）*
+
+**後續升級：** 執行 `android-cli-mac-x86-community update`
 
 ### 為什麼每個前置都需要
 
