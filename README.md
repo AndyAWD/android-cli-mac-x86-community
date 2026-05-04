@@ -20,30 +20,32 @@ It is **not** a reverse-engineered copy of Google's binary. It is a separate Pyt
 
 Requires Python 3.11+ on Intel macOS, plus the Android SDK command-line tools.
 
+### 1. Setup Environment
+
 ```bash
-# 1. Prerequisites (one-time)
 brew install openjdk@17 gradle pipx
 brew install --cask android-commandlinetools
 
-# Copy (do NOT symlink) cmdline-tools into the canonical SDK layout.
-# A symlink resolves back to /usr/local/share/android-commandlinetools and
-# tricks sdkmanager into using that path as the SDK root, hiding any
-# build-tools / platforms / system-images you install.
 mkdir -p ~/Library/Android/sdk/cmdline-tools
-cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest \
-      ~/Library/Android/sdk/cmdline-tools/latest
+cp -R /usr/local/share/android-commandlinetools/cmdline-tools/latest ~/Library/Android/sdk/cmdline-tools/latest
 
-# Tell tools where the SDK lives (add to your shell rc file).
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-# 2. Install this CLI from GitHub via pipx
-pipx ensurepath  # one-time; adds ~/.local/bin to PATH — restart shell or `source ~/.zshrc`
-pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
-
-# Later, to upgrade:
-android-cli-mac-x86-community update
+yes | sdkmanager --licenses
+sdkmanager "platform-tools" "emulator"
 ```
+*(Note: Add the `export` lines to your `~/.zshrc` or `~/.bash_profile`)*
+
+### 2. Install CLI
+
+```bash
+pipx ensurepath
+pipx install git+https://github.com/AndyAWD/android-cli-mac-x86-community.git
+```
+*(Note: You may need to restart your terminal after `pipx ensurepath`)*
+
+**To upgrade later:** run `android-cli-mac-x86-community update`
 
 ### Why each prerequisite
 
